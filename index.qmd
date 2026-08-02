@@ -1,0 +1,15 @@
+---
+title: ""
+page-layout: full
+toc: false
+---
+
+<div class="dragon-landing">
+  <p class="dragon-statement" role="heading" aria-level="1">Здесь водятся <span>драконы</span></p>
+  <nav class="section-links" aria-label="Разделы сайта">
+    <a href="updates.html">Обновления</a>
+    <a href="topics.html">Топики</a>
+    <a href="about.html">About</a>
+    <a href="https://github.com/zuzuka28">GitHub</a>
+  </nav>
+</div>

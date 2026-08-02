@@ -1,0 +1,9 @@
+---
+title: ""
+page-layout: full
+toc: false
+---
+
+<div class="empty-section">
+  <p role="heading" aria-level="1">Топики</p>
+</div>

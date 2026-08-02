@@ -1,0 +1,15 @@
+---
+title: ""
+page-layout: full
+toc: false
+---
+
+<div class="about-links">
+  <a class="profile-cover" href="https://github.com/zuzuka28" aria-label="Профиль zuzuka28 на GitHub">
+    <img src="assets/github-profile.jpg" alt="GitHub avatar пользователя zuzuka28">
+  </a>
+  <nav aria-label="Ссылки GitHub">
+    <a href="https://github.com/zuzuka28">github.com/zuzuka28</a>
+    <a href="https://github.com/zuzuka28/public-blog">github.com/zuzuka28/public-blog</a>
+  </nav>
+</div>

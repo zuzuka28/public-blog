@@ -1,0 +1,10 @@
+/_site/
+/.quarto/
+/.cache/
+/.DS_Store
+**/.DS_Store
+
+
+**/*.quarto_ipynb
+
+/.luarc.json

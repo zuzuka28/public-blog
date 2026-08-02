@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Z</title>
+  <rect width="64" height="64" rx="18" fill="#1c2028"/>
+  <path d="M18 18h30L23 46h24" fill="none" stroke="#f7f8fb" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="18" cy="46" r="5" fill="#786bea"/>
+</svg>
+
