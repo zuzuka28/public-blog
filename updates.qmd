@@ -2,8 +2,16 @@
 title: ""
 page-layout: full
 toc: false
+listing:
+  contents: "posts/*/index.qmd"
+  type: default
+  sort: "date desc"
+  fields: [date, title, description, categories, reading-time]
+  categories: true
+  feed:
+    title: "Обновления — zuzuka28 / заметки"
+    description: "Новые материалы."
+  page-size: 12
 ---
 
-<div class="empty-section">
-  <p role="heading" aria-level="1">Обновления</p>
-</div>
+# Обновления

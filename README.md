@@ -31,7 +31,6 @@ make previews  # light/dark PNG baseline
 ├── _quarto.yml
 ├── index.qmd
 ├── updates.qmd
-├── topics.qmd
 ├── about.qmd
 ├── posts/                         # исходники статей по одной директории на материал
 ├── docs/                          # руководство по страницам и контенту

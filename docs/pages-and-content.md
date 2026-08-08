@@ -8,7 +8,6 @@
 | ------------------ | ------------------------- | ------------------------ | --------------------------------------- |
 | Лендинг            | `/`                       | `index.qmd`              | первая ссылка navbar в `_quarto.yml`    |
 | Обновления         | `/updates.html`           | `updates.qmd`            | navbar и ссылки лендинга                |
-| Топики             | `/topics.html`            | `topics.qmd`             | navbar и ссылки лендинга                |
 | About              | `/about.html`             | `about.qmd`              | navbar и ссылки лендинга                |
 | 404                | `/404.html`               | `404.qmd`                | используется GitHub Pages автоматически |
 | Статья             | `/posts/<slug>/`          | `posts/<slug>/index.qmd` | listing страницы `updates.qmd`          |
@@ -23,8 +22,7 @@
 | GitHub-ссылки About                  | `about.qmd`                                                         |
 | GitHub-avatar                        | `assets/github-profile.jpg`                                         |
 | Favicon                              | `_quarto.yml` → `website.favicon`                                   |
-| Лента публикаций и RSS               | `updates.qmd`                                                       |
-| Ссылки на категории                  | `topics.qmd`                                                        |
+| Лента, RSS и фильтры категорий        | `updates.qmd`                                                       |
 | Общие компоненты и responsive layout | `styles.scss`                                                       |
 | Светлые SCSS defaults                | `theme-light.scss`                                                  |
 | Тёмные SCSS defaults                 | `theme-dark.scss`                                                   |
@@ -33,13 +31,13 @@
 
 ## Добавление статьи
 
-Каждая статья располагается в собственной директории. В ней обязательны `index.qmd` и `assets/`.
+Каждая статья располагается в собственной директории. Обязателен только `index.qmd`; каталог `assets/` добавляется, если статье нужны собственные изображения или другие ресурсы.
 
 ```text
 posts/
 └── article-slug/
     ├── index.qmd
-    ├── assets/
+    ├── assets/        # опционально
     │   └── cover.svg
     └── deck.qmd        # только если нужен связанный Reveal deck
 ```
@@ -50,10 +48,8 @@ posts/
 ---
 title: "Название"
 description: "Короткое описание."
-author: "zuzuka28"
 date: 2026-08-02
 categories: [Quarto]
-image: assets/cover.svg
 ---
 ```
 
@@ -68,7 +64,7 @@ listing:
   contents: "posts/*/index.qmd"
   type: default
   sort: "date desc"
-  fields: [image, date, title, description, categories, reading-time]
+  fields: [date, title, description, categories, reading-time]
   categories: true
   feed:
     title: "Обновления — zuzuka28 / заметки"
@@ -79,15 +75,15 @@ listing:
 
 Файлы `posts/*/index.qmd` автоматически попадут в ленту и RSS `updates.xml`. Вспомогательные `deck.qmd` не совпадают с glob и в ленту не попадают.
 
-## Подключение топиков
+## Фильтрация по категориям
 
-Топик задаётся в `categories` статьи. После включения listing с `categories: true` ссылка на отфильтрованную ленту имеет вид:
+Категории задаются непосредственно во front matter статьи:
 
-```markdown
-[Quarto](updates.html#category=Quarto)
+```yaml
+categories: [Quarto, Визуализация]
 ```
 
-Добавляйте ссылки категорий в `topics.qmd`. Значение после `category=` должно совпадать со значением в `categories` с учётом регистра.
+Опция `categories: true` в listing страницы `updates.qmd` автоматически добавляет сайдбар категорий и фильтрует список статей. Если ни у одной статьи пока нет `categories`, сайдбар не отображается; дополнительная настройка шаблона не требуется.
 
 ## Scrolly-статья
 

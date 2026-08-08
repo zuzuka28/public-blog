@@ -36,8 +36,6 @@ const shots = [
   { name: "landing-mobile.png", path: "/index.html", width: 390, height: 844, mobile: true },
   { name: "updates-desktop.png", path: "/updates.html", width: 1440, height: 1000 },
   { name: "updates-dark.png", path: "/updates.html", width: 1440, height: 1000, dark: true },
-  { name: "topics-desktop.png", path: "/topics.html", width: 1440, height: 1000 },
-  { name: "topics-dark.png", path: "/topics.html", width: 1440, height: 1000, dark: true },
   { name: "about-desktop.png", path: "/about.html", width: 1440, height: 1000 },
   { name: "about-dark.png", path: "/about.html", width: 1440, height: 1000, dark: true },
 ];

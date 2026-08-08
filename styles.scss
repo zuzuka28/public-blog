@@ -200,12 +200,15 @@ h1, h2, h3 {
 .about-links nav a { justify-content: center; }
 
 .quarto-listing-container-default .quarto-post {
-  gap: 1.4rem;
-  margin-bottom: 1rem;
-  padding: 1.25rem;
   border: 1px solid var(--line);
   border-radius: 0.9rem;
   background: var(--paper-raised);
+}
+
+.quarto-listing-container-default .quarto-post {
+  gap: 1.4rem;
+  margin-bottom: 1rem;
+  padding: 1.25rem;
 }
 
 .quarto-listing .listing-title { font-family: var(--sans); font-size: 1.35rem; font-weight: 650; line-height: 1.18; }

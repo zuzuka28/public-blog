@@ -1,6 +1,6 @@
 # Visual previews
 
-Tracked screenshots are the current empty-site baseline. Refresh them after intentional layout or design changes:
+Tracked screenshots are the current site baseline. Refresh them after intentional layout or design changes:
 
 ```bash
 make previews
@@ -18,15 +18,9 @@ The capture script uses a locally installed Chrome-compatible browser through th
 
 ## Updates
 
-![Empty updates section, light theme](updates-desktop.png)
+![Updates listing, light theme](updates-desktop.png)
 
-![Empty updates section, dark theme](updates-dark.png)
-
-## Topics
-
-![Empty topics section, light theme](topics-desktop.png)
-
-![Empty topics section, dark theme](topics-dark.png)
+![Updates listing, dark theme](updates-dark.png)
 
 ## About
 

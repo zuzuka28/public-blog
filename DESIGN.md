@@ -3,7 +3,7 @@
 ## Source of truth
 - Status: Active
 - Last refreshed: 2026-08-02
-- Primary product surfaces: minimal landing page, updates, topics, link-only About page, long-form and scrollytelling articles.
+- Primary product surfaces: minimal landing page, updates with category filters, link-only About page, long-form and scrollytelling articles.
 - Evidence reviewed: the public `zuzuka28/quarto-scrolly-slides` extension, its examples, responsive rules, and visual tokens.
 
 ## Brand
@@ -22,9 +22,9 @@
 - Key contexts of use: desktop deep reading, mobile discovery, shared article links.
 
 ## Information architecture
-- Primary navigation: Home, Updates, Topics, About, GitHub.
-- Core routes/screens: `/`, `/updates.html`, `/topics.html`, `/about.html`, `/posts/<slug>/`.
-- Content hierarchy: statement and section links on the landing page; chronological updates; topic navigation; GitHub links only on About.
+- Primary navigation: Home, Updates, About, GitHub.
+- Core routes/screens: `/`, `/updates.html`, `/about.html`, `/posts/<slug>/`.
+- Content hierarchy: statement and section links on the landing page; chronological updates with category filtering; GitHub links only on About.
 
 ## Design principles
 - Restrained precision: white and silver surfaces, neutral typography, thin borders, and a small stable set of blue/violet accents.
@@ -43,7 +43,7 @@
 ## Components
 - Existing components to reuse: Quarto navbar, listings, category metadata, search, code tools, Reveal output, Scrolly Slides controls.
 - New/changed components: landing statement, section links, link-only profile cover, section shell, update feed treatment.
-- Variants and states: primary/secondary buttons; active/hover/focus topic links; desktop/mobile listing layouts.
+- Variants and states: primary/secondary buttons; active/hover/focus category filters; desktop/mobile listing layouts.
 - Token/component ownership: `styles.scss` owns site tokens; extension tokens are overridden only at `.scrolly-slides` boundaries.
 
 ## Accessibility
@@ -55,7 +55,7 @@
 
 ## Responsive behavior
 - Supported breakpoints/devices: modern browsers from 360px phones through wide desktop monitors.
-- Layout adaptations: hero and home grid collapse below 900px; topic rail becomes a normal flow section; listing thumbnails stack below 640px.
+- Layout adaptations: hero and home grid collapse below 900px; category sidebar becomes a normal flow section; listing thumbnails stack below 640px.
 - Touch/hover differences: no interaction depends on hover; tap targets remain at least 40px where controls are custom.
 
 ## Interaction states

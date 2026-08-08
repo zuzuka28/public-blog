@@ -5,8 +5,8 @@ const root = resolve(import.meta.dirname, "..");
 const requiredOutputs = [
   "_site/index.html",
   "_site/about.html",
-  "_site/topics.html",
   "_site/updates.html",
+  "_site/updates.xml",
   "_site/assets/github-profile.jpg",
   "_site/assets/social-card.png",
 ];
@@ -21,8 +21,16 @@ for (const relativePath of requiredOutputs) {
   }
 }
 
+try {
+  await access(join(root, "_site/topics.html"));
+  failures.push("removed Topics route must not be rendered");
+} catch (error) {
+  if (error.code !== "ENOENT") failures.push("unable to verify removal of _site/topics.html");
+}
+
 const postsRoot = join(root, "posts");
 let articleCount = 0;
+const articleSlugs = [];
 for (const entry of await readdir(postsRoot, { withFileTypes: true })) {
   if (entry.name.startsWith(".")) continue;
   if (!entry.isDirectory()) {
@@ -30,16 +38,18 @@ for (const entry of await readdir(postsRoot, { withFileTypes: true })) {
     continue;
   }
   articleCount += 1;
+  articleSlugs.push(entry.name);
   const articleRoot = join(postsRoot, entry.name);
-  for (const required of ["index.qmd", "assets"]) {
-    try {
-      const info = await stat(join(articleRoot, required));
-      if (required === "assets" && !info.isDirectory()) {
-        failures.push(`article assets path is not a directory: posts/${entry.name}/assets`);
-      }
-    } catch {
-      failures.push(`article is missing ${required}: posts/${entry.name}`);
-    }
+  try {
+    await access(join(articleRoot, "index.qmd"));
+  } catch {
+    failures.push(`article is missing index.qmd: posts/${entry.name}`);
+  }
+  try {
+    const assets = await stat(join(articleRoot, "assets"));
+    if (!assets.isDirectory()) failures.push(`article assets path is not a directory: posts/${entry.name}/assets`);
+  } catch (error) {
+    if (error.code !== "ENOENT") failures.push(`unable to inspect article assets: posts/${entry.name}/assets`);
   }
 }
 
@@ -51,7 +61,7 @@ try {
   if (!indexHtml.includes('rel="icon"') || !indexHtml.includes('href="./assets/github-profile.jpg"')) {
     failures.push("rendered landing must use the GitHub profile image as favicon");
   }
-  if (indexHtml.includes("quarto-listing")) failures.push("landing must not contain a post listing while the site is empty");
+  if (indexHtml.includes("quarto-listing")) failures.push("landing must not contain a post listing");
 } catch {
   // The missing output is already reported above.
 }
@@ -60,6 +70,19 @@ try {
   const aboutHtml = await readFile(join(root, "_site/about.html"), "utf8");
   for (const marker of ["assets/github-profile.jpg", "https://github.com/zuzuka28", "https://github.com/zuzuka28/public-blog"]) {
     if (!aboutHtml.includes(marker)) failures.push(`rendered About is missing GitHub marker: ${marker}`);
+  }
+} catch {
+  // The missing output is already reported above.
+}
+
+try {
+  const updatesSource = await readFile(join(root, "updates.qmd"), "utf8");
+  if (!updatesSource.includes("categories: true")) failures.push("Updates listing must enable native category filters");
+
+  const updatesHtml = await readFile(join(root, "_site/updates.html"), "utf8");
+  const articleMarkers = articleSlugs.map((slug) => `posts/${slug}/index.html`);
+  for (const marker of ["quarto-listing", "quarto-listing-category-title", ...articleMarkers]) {
+    if (!updatesHtml.includes(marker)) failures.push(`rendered Updates is missing marker: ${marker}`);
   }
 } catch {
   // The missing output is already reported above.

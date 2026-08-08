@@ -34,8 +34,6 @@ website:
         text: Главная
       - href: updates.qmd
         text: Обновления
-      - href: topics.qmd
-        text: Топики
       - href: about.qmd
         text: Обо мне
     right:
