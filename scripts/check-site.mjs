@@ -61,7 +61,15 @@ try {
   if (!indexHtml.includes('rel="icon"') || !indexHtml.includes('href="./assets/github-profile.jpg"')) {
     failures.push("rendered landing must use the GitHub profile image as favicon");
   }
-  if (indexHtml.includes("quarto-listing")) failures.push("landing must not contain a post listing");
+  for (const marker of [
+    'data-goatcounter="https://zuzuka28.goatcounter.com/count"',
+    'src="https://gc.zgo.at/count.js"',
+    "data-goatcounter-counter-ui",
+    "https://zuzuka28.goatcounter.com/counter/",
+  ]) {
+    if (!indexHtml.includes(marker)) failures.push(`rendered landing is missing GoatCounter marker: ${marker}`);
+  }
+  if (indexHtml.includes('class="quarto-listing')) failures.push("landing must not contain a post listing");
 } catch {
   // The missing output is already reported above.
 }

@@ -214,7 +214,11 @@ h1, h2, h3 {
 .quarto-listing .listing-title { font-family: var(--sans); font-size: 1.35rem; font-weight: 650; line-height: 1.18; }
 .quarto-listing .listing-description,
 .quarto-listing .listing-date,
-.quarto-listing .listing-reading-time { color: var(--muted); }
+.quarto-listing .listing-reading-time,
+.quarto-listing .listing-views { color: var(--muted); }
+.quarto-listing .listing-views,
+.post-views .view-count { font-variant-numeric: tabular-nums; }
+.post-views .view-count { margin-bottom: 0; }
 .listing-category { border: 1px solid var(--line) !important; border-radius: 999px !important; color: var(--blue) !important; background: var(--soft-blue); }
 
 .page-footer { border-top: 1px solid var(--line); background: color-mix(in srgb, var(--paper-raised) 72%, transparent); }

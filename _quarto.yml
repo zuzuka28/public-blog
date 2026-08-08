@@ -48,6 +48,7 @@ website:
 
 format:
   html:
+    include-in-header: includes/goatcounter.html
     theme:
       light: [cosmo, theme-light.scss, styles.scss]
       dark: [cosmo, theme-dark.scss, styles.scss]

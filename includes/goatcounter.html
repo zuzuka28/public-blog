@@ -1,0 +1,85 @@
+<script
+  data-goatcounter="https://zuzuka28.goatcounter.com/count"
+  async
+  src="https://gc.zgo.at/count.js"
+></script>
+<script data-goatcounter-counter-ui>
+  (() => {
+    const counterBaseUrl = "https://zuzuka28.goatcounter.com/counter/";
+
+    async function getViewCount(path) {
+      const response = await fetch(`${counterBaseUrl}${encodeURIComponent(path)}.json`, {
+        credentials: "omit",
+        headers: { Accept: "application/json" },
+      });
+
+      if (!response.ok) throw new Error(`GoatCounter returned ${response.status}`);
+
+      const data = await response.json();
+      if (data.count === undefined || data.count === null) {
+        throw new Error("GoatCounter response does not contain a count");
+      }
+
+      return String(data.count);
+    }
+
+    async function showCount(element, path, render) {
+      try {
+        element.textContent = render(await getViewCount(path));
+        element.hidden = false;
+        return true;
+      } catch {
+        // Counters are optional UI: keep them hidden when GoatCounter is blocked.
+        return false;
+      }
+    }
+
+    function addListingCounters() {
+      document.querySelectorAll(".quarto-listing .quarto-post").forEach((post) => {
+        const postLink = post.querySelector(".listing-title a[href]");
+        const metadata = post.querySelector(".metadata > a");
+        if (!postLink || !metadata) return;
+
+        const counter = document.createElement("div");
+        counter.className = "listing-views";
+        counter.hidden = true;
+        metadata.append(counter);
+
+        const path = new URL(postLink.href, window.location.href).pathname;
+        void showCount(counter, path, (count) => `Просмотры: ${count}`);
+      });
+    }
+
+    function addPostCounter() {
+      const titleMetadata = document.querySelector("#title-block-header .quarto-title-meta");
+      if (!titleMetadata || !window.location.pathname.includes("/posts/")) return;
+
+      const item = document.createElement("div");
+      item.className = "post-views";
+      item.hidden = true;
+
+      const heading = document.createElement("div");
+      heading.className = "quarto-title-meta-heading";
+      heading.textContent = "Просмотры";
+
+      const contents = document.createElement("div");
+      contents.className = "quarto-title-meta-contents";
+
+      const count = document.createElement("p");
+      count.className = "view-count";
+      contents.append(count);
+      item.append(heading, contents);
+      titleMetadata.append(item);
+
+      const path = window.location.pathname + window.location.search;
+      void showCount(count, path, (value) => value).then((shown) => {
+        if (shown) item.hidden = false;
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      addListingCounters();
+      addPostCounter();
+    });
+  })();
+</script>

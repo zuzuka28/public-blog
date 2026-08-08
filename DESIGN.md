@@ -2,7 +2,7 @@
 
 ## Source of truth
 - Status: Active
-- Last refreshed: 2026-08-02
+- Last refreshed: 2026-08-08
 - Primary product surfaces: minimal landing page, updates with category filters, link-only About page, long-form and scrollytelling articles.
 - Evidence reviewed: the public `zuzuka28/quarto-scrolly-slides` extension, its examples, responsive rules, and visual tokens.
 
@@ -13,7 +13,7 @@
 
 ## Product goals
 - Goals: keep work easy to publish and connect; give technical articles a calm reading surface; keep publishing friction low.
-- Non-goals: comments, accounts, newsletters, analytics, or a full CMS in the initial version.
+- Non-goals: comments, accounts, newsletters, or a full CMS in the initial version.
 - Success signals: every visible link is intentional, and new posts can be connected without restructuring the project.
 
 ## Personas and jobs
@@ -42,7 +42,7 @@
 
 ## Components
 - Existing components to reuse: Quarto navbar, listings, category metadata, search, code tools, Reveal output, Scrolly Slides controls.
-- New/changed components: landing statement, section links, link-only profile cover, section shell, update feed treatment.
+- New/changed components: landing statement, section links, link-only profile cover, section shell, update feed treatment, optional GoatCounter view counts.
 - Variants and states: primary/secondary buttons; active/hover/focus category filters; desktop/mobile listing layouts.
 - Token/component ownership: `styles.scss` owns site tokens; extension tokens are overridden only at `.scrolly-slides` boundaries.
 
@@ -59,12 +59,12 @@
 - Touch/hover differences: no interaction depends on hover; tap targets remain at least 40px where controls are custom.
 
 ## Interaction states
-- Loading: static-first pages; no custom loading state required.
+- Loading: static-first pages; view counts stay hidden until GoatCounter responds.
 - Empty: listings preserve their layout without fabricating content when no documents match.
 - Error: deployment and local checks fail loudly; broken interactive decks display the extension's error state.
 - Success: current content is visible immediately after static generation.
 - Disabled: not used outside native extension controls.
-- Offline/slow network: core typography, SVGs, CSS, and JS are served from the built site without third-party runtime requests.
+- Offline/slow network: core content and navigation remain usable; optional analytics and view counts may be unavailable.
 
 ## Content voice
 - Tone: minimal and direct; no placeholder prose.
@@ -74,7 +74,7 @@
 ## Implementation constraints
 - Framework/styling system: Quarto website with native light/dark theme toggle, Bootstrap-compatible SCSS, vendored Quarto extension.
 - Design-token constraints: both modes share the same violet/blue accents; only surface, text, border, and shadow tokens change by mode.
-- Performance constraints: no client framework, no external font CDN, and no mandatory analytics scripts.
+- Performance constraints: no client framework or external font CDN; analytics is limited to the lightweight GoatCounter client and counter requests.
 - Compatibility constraints: Quarto 1.9 stable in CI; modern evergreen browsers for Scrolly Slides.
 - Test/screenshot expectations: `make check` must render and validate required outputs; `make previews` refreshes tracked desktop/mobile PNG references.
 
