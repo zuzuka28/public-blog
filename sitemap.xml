@@ -2,18 +2,22 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://zuzuka28.github.io/public-blog/updates.html</loc>
-    <lastmod>2026-08-02T12:13:28.980Z</lastmod>
+    <lastmod>2026-08-08T09:18:01.345Z</lastmod>
   </url>
   <url>
-    <loc>https://zuzuka28.github.io/public-blog/index.html</loc>
-    <lastmod>2026-08-02T12:13:28.973Z</lastmod>
+    <loc>https://zuzuka28.github.io/public-blog/posts/protocol-stand/index.html</loc>
+    <lastmod>2026-08-08T09:18:01.340Z</lastmod>
   </url>
   <url>
     <loc>https://zuzuka28.github.io/public-blog/about.html</loc>
-    <lastmod>2026-08-02T12:13:28.969Z</lastmod>
+    <lastmod>2026-08-08T09:18:01.336Z</lastmod>
   </url>
   <url>
-    <loc>https://zuzuka28.github.io/public-blog/topics.html</loc>
-    <lastmod>2026-08-02T12:13:28.980Z</lastmod>
+    <loc>https://zuzuka28.github.io/public-blog/index.html</loc>
+    <lastmod>2026-08-08T09:18:01.340Z</lastmod>
+  </url>
+  <url>
+    <loc>https://zuzuka28.github.io/public-blog/posts/vulnerability-hunting/index.html</loc>
+    <lastmod>2026-08-08T09:18:01.340Z</lastmod>
   </url>
 </urlset>

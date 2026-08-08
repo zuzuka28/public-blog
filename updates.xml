@@ -1,0 +1,1074 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>Обновления — zuzuka28 / заметки</title>
+<link>https://zuzuka28.github.io/public-blog/updates.html</link>
+<atom:link href="https://zuzuka28.github.io/public-blog/updates.xml" rel="self" type="application/rss+xml"/>
+<description>Новые материалы.</description>
+<image>
+<url>https://zuzuka28.github.io/public-blog/assets/social-card.png</url>
+<title>Обновления — zuzuka28 / заметки</title>
+<link>https://zuzuka28.github.io/public-blog/updates.html</link>
+<height>76</height>
+<width>144</width>
+</image>
+<generator>quarto-1.9.38</generator>
+<lastBuildDate>Tue, 04 Aug 2026 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>Поиск уязвимостей в программном обеспечении</title>
+  <link>https://zuzuka28.github.io/public-blog/posts/vulnerability-hunting/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>В настоящее время есть довольно много сервисов и продуктов, которые направлены на поиск уязвимостей в программном обеспечении.</p>
+<p>Мне известны три способа поспособствовать повышению общей безопасности:</p>
+<ul>
+<li>сервисы, которые находят уязвимости и публикуют отчеты о том, где они были найдены и как их поспроизвести</li>
+<li>сканеры исходного кода, которые анализируют пакеты и их зависимости, чтобы указать на наличие уязвимых версий</li>
+<li>сканеры инфраструктуры, которые обнаруживают уязвимости в развернутых серверах, если администраторы не скрыли информацию об этом</li>
+</ul>
+<p>Большой проблемой данной области является то, что отчеты об уязвимостях имеют различные форматы и структуры, есть некоторый недостаток стандартизации и консистентности в обозначениях: разные продукты пользуются одинаковыми стандартами, но могут использовать различные термины в рамках данных систем.</p>
+<p>Вот примеры хороших инициатив и стандартов, которые помогают описывать уязвимости в едином формате:</p>
+<ul>
+<li><a href="https://github.com/CVEProject/cvelistV5">CVE JSON 5</a> - Common Vulnerabilities and Exposures в формате JSON, открытая база данных CVE</li>
+<li><a href="https://www.first.org/cvss/v4.0/">CVSS</a> - Common Vulnerability Scoring System - система оценки опасности уязвимостей и основных ее характеристик (CVSS Vector)</li>
+<li><a href="https://nvlpubs.nist.gov/nistpubs/Legacy/IR/nistir7698.pdf">CPE</a> - Common Platform Enumeration - идентификаторы для различных платформ и продуктов</li>
+<li><a href="https://ossf.github.io/osv-schema/">OSV</a> - Open Source Vulnerability - открытый стандарт для описания уязвимостей в программном обеспечении</li>
+<li><a href="https://github.com/package-url/purl-spec">PURL</a> - Package URL - идентификатор для различных систем пакетирования (распространения ПО)
+<ul>
+<li><a href="https://github.com/package-url/vers-spec">vers-spec</a> - Version Specification - спецификация версий для различных систем пакетирования</li>
+</ul></li>
+</ul>
+<p>Но даже с ведением стандарто проскакивают ошибки и расхождения между разными системами, которые мешают полной унификации.</p>
+<p>Пример: несмотря на использование CPE, в разных системах может быть использовано разное название одного и того же продукта, например, в разном кейсе.</p>
+<p>Пример: одна и та же уязвимость может публиковаться в различных системах и иметь различные идентификаторы - CVE, GHSA, OSV, и т.д.</p>
+<p>Пример: одна система предоставляет полный перечень уязвимых версий, а другая обобщает их в некоторый диапазон версий, например, от 1.0 до 1.10.</p>
+<p>Я обратил внимание на способы получения информации о существующих уязвимостей на основе переданной информации о конкретном продукте и его версии.</p>
+<p>Для реализации подобного проекта, конечно, требуется база данных об уязвимостях и ПО.</p>
+<p>Идеальный вариант, чтобы в базе данных была следующая информация:</p>
+<ul>
+<li>Идентификатор уязвимости</li>
+<li>Идентификатор вендора</li>
+<li>Идентификатор продукта</li>
+<li>Перечень уязвимых версий</li>
+</ul>
+<p>При наличии данного перечня полей, можно было бы построить простой индекс и выбирать напрямую:</p>
+<ul>
+<li>строим ключ из идентификатора вендора, идентификатора продукта, версии</li>
+<li>группируем по ключу все уязвимости</li>
+<li>при запросе по идентификатору вендора, идентификатору продукта, версии, получаем список уязвимостей - профит!</li>
+</ul>
+<p>Но все было бы слишком просто, если бы у нас было достаточно информации.</p>
+<p>Проблемы начинаются с каждым из пунктов:</p>
+<ul>
+<li>вендоры и продукты могут иметь разное написание в разных отчетах, как самый простой пример - “nginx” и “NGINX Server”</li>
+<li>в разных отчетах могут быть указаны как точные версии, так и диапазоны версий</li>
+<li>в разных системах пакетирования (распространения ПО) могут быть различные идентификаторы для одного и того же продукта</li>
+<li>в разных системах пакетирования (распространения ПО) могут быть различные версии для одного и того же продукта</li>
+<li>отчет может содержать текстовое описание уязвимости, но не обладать структурированной информацией о каждом из нужных нам полей</li>
+</ul>
+<p>Для решения данных проблем некоторые инструменты приложили большие усилия, например:</p>
+<ul>
+<li>есть специализированный инструмент, который по по переданному описанию (ключевые слова, название вендора и продукта) предугадывает, о каком CPE идет речь, и выдает список возможных вариантов. проект: https://github.com/vulnerability-lookup/cpe-guesser</li>
+<li>есть целый пласт исследований, которые направлены на выявление неконсистентности в CPE названиях в открытых базах данных уязвимостей. в оригинальной идее NIST, отчеты используют официальный CPE Dictionary, но компаний и продуктов появляется больше, чем заносится в официальный словарь.</li>
+<li>инициатива OSV предоставляет окрытый стандарт, было собрано и конвертировано в данный формат большое количество отчетов об уязвимостях, что позволило поверх данного стандарта реализовать <a href="https://github.com/google/osv-scanner">инструменты для поиска уязвимостей</a></li>
+</ul>
+<p>Больше всего я заинтересовался проектом OSV, который предоставляет открытый стандарт и инструменты для поиска уязвимостей. Но он полагается на GCP, а цепляться за платформу и ее API не хочется. Нужно искать способы отцепиться от GCP и использовать свои данные и платформу.</p>
+<p>Помимо отсутствия четкого стандарта по именованию продуктов и вендоров, разрешение списка версий известных продуктов является отдельной задачей. От продукта к продукту вижу способ сделать записи более читабельными для человека и сэкономить на количестве хранимых данных: полный список версий продукта заменяется на диапазон версий.</p>
+<p>Пример способа задания версий в стиле NVD:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb1-1"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"configurations"</span><span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">:</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">[</span></span>
+<span id="cb1-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb1-3">    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"operator"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"AND"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-4">    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"nodes"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">[</span></span>
+<span id="cb1-5">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb1-6">        <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"operator"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"OR"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-7">        <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"negate"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">false</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-8">        <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"cpeMatch"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">[</span></span>
+<span id="cb1-9">          <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb1-10">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"vulnerable"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">true</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-11">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"criteria"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cpe:2.3:a:apache:http_server:*:*:*:*:*:*:*:*"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-12">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"versionStartIncluding"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"2.4.0"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-13">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"versionEndExcluding"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"2.4.53"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-14">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"matchCriteriaId"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"7D322E73-E75D-4A2D-A3D3-5B390D8F11A1"</span></span>
+<span id="cb1-15">          <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb1-16">        <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">]</span></span>
+<span id="cb1-17">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-18">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb1-19">        <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"operator"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"OR"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-20">        <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"negate"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">false</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-21">        <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"cpeMatch"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">[</span></span>
+<span id="cb1-22">          <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb1-23">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"vulnerable"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">false</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-24">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"criteria"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cpe:2.3:o:linux:linux_kernel:-:*:*:*:*:*:*:*"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-25">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"matchCriteriaId"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"BD49463F-6A81-4C54-AD0B-36B69041696E"</span></span>
+<span id="cb1-26">          <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb1-27">        <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">]</span></span>
+<span id="cb1-28">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb1-29">    <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">]</span></span>
+<span id="cb1-30">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb1-31"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">]</span></span></code></pre></div></div>
+<p>Если работать с диапазоном версий напрямую, то формат версии должен быть достаточно строгим, чтобы можно было говорить о родительской и дочерней версии:</p>
+<ul>
+<li>версии продуктов указываются в формате Semver-like (X.Y.Z), для этого формата существует множество инструментов и библиотек, которые позволяют оценить, входит ли одна версия в диапазон версий</li>
+<li>версии продуктов указываются в виде git хэшей, тогда уязвимые версии можно вычислить из диапазона хэшей и тегов</li>
+</ul>
+<p>Проблема с версиями продуктов заключается в том, что:</p>
+<ul>
+<li>в отдельных системах пакетирования могут быть различные форматы версий продуктов</li>
+<li>чтобы раскрыть диапазон версий, нужно знать полный список версий продукта</li>
+</ul>
+<p>Довольно многие проблемы с версиями и способами были описаны и им было предложено решение в OSV - спецификация предусматривает указание типа версии, источник версии и поддерживает указание диапазона версий.</p>
+<p>Пример способа задания версий в стиле OSV:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb2-2">    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"affected"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">[</span></span>
+<span id="cb2-3">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb2-4">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"package"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb2-5">                <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"ecosystem"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb2-6">                <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"name"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb2-7">                <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"purl"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span></span>
+<span id="cb2-8">            <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">},</span></span>
+<span id="cb2-9">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"severity"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">[</span></span>
+<span id="cb2-10">                <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb2-11">                    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"type"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb2-12">                    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"score"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb2-13">                    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"source"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span></span>
+<span id="cb2-14">                <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb2-15">            <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">]</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb2-16">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"ranges"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">[</span></span>
+<span id="cb2-17">                <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb2-18">                    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"type"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb2-19">                    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"repo"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb2-20">                    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"events"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">[</span></span>
+<span id="cb2-21">                        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb2-22">                            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"introduced"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb2-23">                            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"fixed"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb2-24">                            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"last_affected"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb2-25">                            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"limit"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span></span>
+<span id="cb2-26">                        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb2-27">                    <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">]</span></span>
+<span id="cb2-28">                <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb2-29">            <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">]</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb2-30">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"versions"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">[</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span></span>
+<span id="cb2-31">            <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">]</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb2-32">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"ecosystem_specific"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">see</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">description</span></span>
+<span id="cb2-33">            <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">},</span></span>
+<span id="cb2-34">            <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"database_specific"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">see</span> <span class="er" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">description</span></span>
+<span id="cb2-35">            <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb2-36">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb2-37">    <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">]</span></span>
+<span id="cb2-38"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span></code></pre></div></div>
+<p>Еще интересными форматами хранения информации о пакетах и их версиях являются PURL и vers-spec - более компактный формат.</p>
+<pre class="purl"><code>pkg:pypi/django@1.11.1</code></pre>
+<pre class="vers-spec"><code>vers:npm/1.2.3|&gt;=2.0.0|&lt;5.0.0</code></pre>
+<p>Зная формат версий, можно применить локальные методы для определения принадлежности версии к диапазону версий и раскрытию диапазона в конкретные версии.</p>
+<ul>
+<li>Для git хэшей - можно запросить дерево коммитов и извлечь информацию оттуда.</li>
+<li>Для semver версий - разрешать версии с помощью правил semver.</li>
+<li>Для других форматов версий - если есть словарь появления версий продукта, то можно пользоваться им для разрешения ссылок, либо оставить их только для точных совпадений.</li>
+</ul>
+<p>Дополнительная информация об источнике версий может помочь в извлечении полного списка версий указанного продукта и определении точных версий, которые подверглись уязвимости. С наличием полного перечня версий гораздо проще избежать указания никогда не существовавших версий продукта, полученных путем применения правил (semver генерация промежуточных версий).</p>
+<p>Проклевывается следующий набор компонентов:</p>
+<ul>
+<li>предсказатель CPE на основе ключевых слов о продукте и вендоре (чтобы переживать переименования)
+<ul>
+<li>в отличие от cpe guesser, скорее всего, он должен быть инкрементальным и перестаиваться при появлении новых отчетов</li>
+</ul></li>
+<li>категоризатор версий (если явно не указан их тип)</li>
+<li>компонент для разрешения semver версий
+<ul>
+<li>можно построить что-то типа дерева, чтобы сократить необходимые линейные сканирования - корень, мажорные версии выше, минорные ниже, конкретные версии в листьях</li>
+<li>либо можно пользоваться существующими движками, которые умеют искать по версиям, например - elasticsearch</li>
+</ul></li>
+<li>компонент для разрешения git хэшей
+<ul>
+<li>для данного компонента потребуется иметь ссылку на репозиторий с исходным кодом, чтобы опираться на актуальное дерево</li>
+</ul></li>
+<li>компонент для разрешения остальных версий на основе словарей версий продуктов
+<ul>
+<li>словари можно составлять по данным из систем пакетирования, которые публикуют информацию о пакете и указывают даты выхода (т.е можно установить порядок)</li>
+</ul></li>
+<li>адаптер для git</li>
+<li>адаптер для каждого пакетного менеджера</li>
+<li>адаптер для каждого открытого источника отчетов об уязвимостях</li>
+</ul>
+<p>Подумаем о каждом отдельно.</p>
+<p>Реже всего я видел то, как выбираются версии продуктов, поэтому сначала обратим внимание на них.</p>
+<p>Два самых частых вопроса, которые задаются в системах обнаружения уязвимостей, это:</p>
+<ul>
+<li>Уязвим ли продукт X в версии Y?
+<ul>
+<li>ответ да или нет</li>
+</ul></li>
+<li>Какие уязвимости есть в продукте X?
+<ul>
+<li>ответ в виде списка уязвимостей</li>
+</ul></li>
+</ul>
+<p>Дизайн компонента, который занимается выборкой по версиям, должен учитывать основные кейсы и отвечать на них наиболее эффективно.</p>
+<hr>
+<p>Референсы:</p>
+<ul>
+<li>https://ieeexplore.ieee.org/document/10286066</li>
+<li>https://dl.acm.org/doi/epdf/10.1145/3803633.3803650</li>
+<li>https://onlinelibrary.wiley.com/doi/epdf/10.1002/sec.1262</li>
+<li>https://arxiv.org/html/2405.13568v1</li>
+<li>https://about.gitlab.com/blog/generic-semantic-version-processing/</li>
+<li>https://github.com/package-url/vers-spec</li>
+<li>https://github.com/aboutcode-org/vulnerablecode</li>
+<li>https://github.com/aboutcode-org/fetchcode</li>
+</ul>
+
+
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Наверх</a> ]]></description>
+  <guid>https://zuzuka28.github.io/public-blog/posts/vulnerability-hunting/</guid>
+  <pubDate>Tue, 04 Aug 2026 00:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Стенд для обучения работы с сетевыми протоколами</title>
+  <link>https://zuzuka28.github.io/public-blog/posts/protocol-stand/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>Я занимаюсь разработкой распределенных систем и периодически мне на глаза попадаются статьи и книги о деталях реализации сетевых протоколов.</p>
+<p>Я не сетевой инженер, поэтому мои знания обо всех деталях того, как работают протоколы довольно ограничены: что-то слышал, что-то проходил в рамках курсов, но никогда не занимался реализацией собсвенных протоколов на низком уровне.</p>
+<p>Мне хотелось бы самому лучше разобраться в деталях и помочь другим интересующимся изучить тему, поэтому я хочу реализовать приложение, которое позволит детерменированно симулировать и тестировать работу протоколов.</p>
+<p>Я слышал умные слова, но не трогал и не представлял, как в реальности выглядят следующие приемы:</p>
+<ul>
+<li>retransmission</li>
+<li>buffer management</li>
+<li>sliding window</li>
+<li>crc checksum</li>
+<li>sequence numbers</li>
+<li>reassembly</li>
+<li>error detection</li>
+<li>error correction</li>
+</ul>
+<p>Я знаю, что эти приемы как-то связаны с решением следующих проблем:</p>
+<ul>
+<li>работа при потере пакетов</li>
+<li>работа при задержке пакетов</li>
+<li>работа при дублировании пакетов</li>
+<li>работа при ошибке в пакете</li>
+<li>работа при ошибке в последовательности пакетов</li>
+<li>работа при отставании читателя или писателя</li>
+</ul>
+<p>Но не знаю, как каждый подход связан с решением конкретной проблемы.</p>
+<p>Я хочу понять, как реальные протоколы по типу TCP/UDP/IP передают данные и почему мы можем полагаться на их работу.</p>
+<section id="почему-нужен-специальный-стенд-для-обучения" class="level2">
+<h2 class="anchored" data-anchor-id="почему-нужен-специальный-стенд-для-обучения">Почему нужен специальный стенд для обучения?</h2>
+<p>Реализация учебного протокола требует контролируемой среды, где можно управлять скоростью передачи данных, задержками, потерями пакетов и другими параметрами.</p>
+<p>Также требуется отказаться от использования реального времени, потому что тогда стенд будет медленным и недетерминированным - вместо этого будут использовать внутренние виртуальные таймеры, которые будут точно выполнять действия в заданное время.</p>
+</section>
+<section id="первая-задача-создание-корректной-абстракции" class="level2">
+<h2 class="anchored" data-anchor-id="первая-задача-создание-корректной-абстракции">Первая задача: создание корректной абстракции</h2>
+<p>Первой задачей, с которой я столкнулся при реализации стенда, было создание корректной абстракции, чтобы пользователи были ограничены и занимались именно реализацией протокола.</p>
+<p>Изначально я хотел предоставить абстракцию, близкую к net/http из Go, что-то типа:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode go code-with-copy"><code class="sourceCode go"><span id="cb1-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">type</span> Server <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">interface</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb1-2">    Handle<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>ctx<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> req <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>Request<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(*</span>Response<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span></span>
+<span id="cb1-3"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb1-4"></span>
+<span id="cb1-5"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">type</span> Client <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">interface</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb1-6">    Do<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>ctx <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>Context<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> req <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>Request<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(*</span>Response<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span></span>
+<span id="cb1-7"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span></span></code></pre></div></div>
+<p>Клиент отправляет запрос, сервер получает запрос и отвечает.</p>
+<p>Но протоколы, которые я хотел рассматривать, могут работать и на более низком уровне, чем HTTP - основная часть приемов, которые меня интересуют работают с последовательностями байт, что ближе к net.Conn.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode go code-with-copy"><code class="sourceCode go"><span id="cb2-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">type</span> Conn <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">interface</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb2-2">    Read<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>ctx <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>Context<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> p <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">[]</span><span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">byte</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>n <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">int</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> err <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span></span>
+<span id="cb2-3">    Write<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>ctx <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>Context<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> p <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">[]</span><span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">byte</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>n <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">int</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> err <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span></span>
+<span id="cb2-4">    CloseWrite<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>ctx <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>Context<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span></span>
+<span id="cb2-5">    Close<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">()</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span></span>
+<span id="cb2-6"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span></span></code></pre></div></div>
+<p>После некоторого изучения стало понятно, что для реализации и тестирования протоколов (и наблюдения за их поведением), более удобным способом представления протокола будет не прикладной интерфейс взаимодействия, а набор реакций на происходящие события - отправку и прием данных, либо истечение некоторых временных ограничений.</p>
+<p>Тогда пользователь будет реализовывать протокол в виде набора реакций на события:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode go code-with-copy"><code class="sourceCode go"><span id="cb3-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">type</span> ProtocolContext <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">interface</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb3-2">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">// send packet to network layer</span></span>
+<span id="cb3-3">    SendPacket<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>p <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">[]</span><span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">byte</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span></span>
+<span id="cb3-4"></span>
+<span id="cb3-5">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">// submit to application layer</span></span>
+<span id="cb3-6">    SubmitToApp<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>msg <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">[]</span><span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">byte</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span></span>
+<span id="cb3-7"></span>
+<span id="cb3-8">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">// virtual time</span></span>
+<span id="cb3-9">    SetTimer<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>id <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> timeout time<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span>Duration<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span></span>
+<span id="cb3-10">    CancelTimer<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>id <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span></span>
+<span id="cb3-11"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb3-12"></span>
+<span id="cb3-13"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">type</span> Protocol <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">interface</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb3-14">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">// called when application layer writes message</span></span>
+<span id="cb3-15">    OnAppWrite<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>ctx ProtocolContext<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> msg <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">[]</span><span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">byte</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span></span>
+<span id="cb3-16"></span>
+<span id="cb3-17">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">// called when network layer receives packet</span></span>
+<span id="cb3-18">    OnRecievePacket<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>ctx ProtocolContext<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> p <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">[]</span><span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">byte</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span></span>
+<span id="cb3-19"></span>
+<span id="cb3-20">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">// called when timer expires</span></span>
+<span id="cb3-21">    OnTimer<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>ctx ProtocolContext<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> id <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">string</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span></span>
+<span id="cb3-22"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span></span></code></pre></div></div>
+<p>Предоставляя пользователям хорошую абстракцию, можно симулировать работу протокола без использования реальных сетевых интерфейсов.</p>
+<p>Для изучения большинства приемов достаточно одной пары клиент-сервер, поэтому мультиплексирование и управление несколькими соединениями будет вынесено за рамки данного цикла упражнений.</p>
+<p>Отправка транспорных пакетов и контроль последовательности доставки далеко не самый первый слой в сетевом стеке. Зачастую канал передачи данных не является надежным, поэтому поверх канала передачи данных присутствует еще и канальный протокол, который будет отвечать за целостную передачу пакетов по ненадежному каналу.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode go code-with-copy"><code class="sourceCode go"><span id="cb4-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">type</span> ChannelProtocolContext <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">interface</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb4-2">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">// send bits to channel</span></span>
+<span id="cb4-3">    SendBits<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>p BitSlice<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span></span>
+<span id="cb4-4"></span>
+<span id="cb4-5">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">// submit to application layer</span></span>
+<span id="cb4-6">    SubmitToApp<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>msg <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">[]</span><span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">byte</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span></span>
+<span id="cb4-7"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb4-8"></span>
+<span id="cb4-9"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">type</span> ChannelProtocol <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">interface</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb4-10">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">// called when channel receives bits</span></span>
+<span id="cb4-11">    OnRecieveBits<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>ctx ChannelProtocolContext<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> p BitSlice<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span></span>
+<span id="cb4-12"></span>
+<span id="cb4-13">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">// called when channel sends bits</span></span>
+<span id="cb4-14">    OnAppWrite<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>ctx ChannelProtocolContext<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> msg <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">[]</span><span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">byte</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span></span>
+<span id="cb4-15"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span></span></code></pre></div></div>
+<p>Помимо отправки сообщений через транспорт, многие протоколы используют дополнительное кодирование данных для повышения эффективности передачи. Кодирование может быть реализовано на разных уровнях: как перед вызовом транспортного протокола, так и перед передачей в канальный протокол.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode go code-with-copy"><code class="sourceCode go"><span id="cb5-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">type</span> Codec <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">interface</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb5-2">    Encode<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">(</span>msg <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">[]</span><span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">byte</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">([]</span><span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">byte</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span></span>
+<span id="cb5-3">    Decode<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">()</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">([]</span><span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">byte</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">,</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">error</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">)</span></span>
+<span id="cb5-4"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span></span></code></pre></div></div>
+</section>
+<section id="вторая-задача-обозреваемая-работа-протоколов-с-симуляторов" class="level2">
+<h2 class="anchored" data-anchor-id="вторая-задача-обозреваемая-работа-протоколов-с-симуляторов">Вторая задача: обозреваемая работа протоколов с симуляторов</h2>
+<p>Чтобы пользователи могли тестировать и наблюдать за работой написанного ими протокола, требуется реализовать симулятор, через который будет проходить каждый этап обработки сообщений, а не только первый и последний этапы. Связка протоколов должна целиком работать через коммуникацию с симулятором, который будет посылать управляющие сигналы между протоколами.</p>
+<p>Текущая идея - написать управляющий компонент, который будет единой точкой отслеживания всех событий, а реализация протоколов будет лежать на небольших приложениях, которые будут общаться с помощью json через stdin/stdout через sdk симулятора. Это не полный language agnostic подход, но с по крайней мере он позволит меньше зависеть от конкретного языка, на котором будут писаться обработчики.</p>
+<p>Для полной обозреваемости можно строить систему как flow движок, где пользователь сможет указать ноды с собственными протоколами. Потенциальные ноды:</p>
+<ul>
+<li>отправка сообщения (можно ввести любой текст для отправки)</li>
+<li>кодирование / декодирование (дополнительный слой модификации данных перед передачей в другие узлы)</li>
+<li>пакетный протокол (работает с пакетами и байтами)</li>
+<li>канальный протокол (работает с пакетами и битами)</li>
+<li>модицикация события (может быть использована для добавления задержки, потери пакетов, дублирования пакетов и т.д.)</li>
+</ul>
+<p>Каждый компонент может запускаться как отдельное приложение, в gui будет попадать информация о результатах работы каждой ноды, чтобы можно было отобразить поэтапную работу каждого компонента.</p>
+<p>Из нюансов: в реализации самой ноды может быть внутреннее состояние, которое никак не отобразить в gui, которое могло бы быть полезным для отладки.</p>
+<p>Общая схема работы стенда примерно такая:</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TD
+
+SendMessage[Отправка сообщения] -.-&gt; Simulator[Симулятор]
+Simulator -.-&gt; Codec[Кодирование / декодирование]
+Codec -.-&gt; Simulator
+Simulator -.-&gt; PacketProtocol[Пакетный протокол]
+PacketProtocol -.-&gt; Simulator
+Simulator -.-&gt; ChannelProtocol[Канальный протокол]
+ChannelProtocol -.-&gt; Simulator
+Simulator -.-&gt;  Modification[Модицикация события]
+Modification -.-&gt; Simulator
+
+Codec ---&gt; PacketProtocol
+PacketProtocol ---&gt; ChannelProtocol
+ChannelProtocol ---&gt; Modification
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>То есть каждый этап проходит через симулятор, который будет визуализировать и контролировать все этапы работы протокола.</p>
+</section>
+<section id="где-применимы-собственные-протоколы" class="level2">
+<h2 class="anchored" data-anchor-id="где-применимы-собственные-протоколы">Где применимы собственные протоколы?</h2>
+<p>В настоящее время нельзя написать собственный протокол, который бы выполнял роль UDP/TCP/IP, потому что реализации этих протоколов уже содержатся в операционных системах. Собственные протоколы можно использовать только если будут системы, которые поддерживают написанные протокол, что в основном значит, что требуется перекомпилировать систему с написанным протоколом.</p>
+<p>Наиболее близким опытом к созданию транспортного протокола является реализация собственного прикладного протокола поверх стека UDP/IP - UDP является протоколом без состояния, поэтому все нюансы управления соединением будут реализованы в прикладном протоколе.</p>
+
+
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Наверх</a> ]]></description>
+  <guid>https://zuzuka28.github.io/public-blog/posts/protocol-stand/</guid>
+  <pubDate>Mon, 03 Aug 2026 00:00:00 GMT</pubDate>
+</item>
+</channel>
+</rss>
