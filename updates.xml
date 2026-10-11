@@ -17,7 +17,39 @@
 <width>144</width>
 </image>
 <generator>quarto-1.9.38</generator>
-<lastBuildDate>Tue, 04 Aug 2026 00:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sun, 13 Sep 2026 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>Учимся моделировать системы математически</title>
+  <link>https://zuzuka28.github.io/public-blog/posts/learn-tla/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>TLA+ - temporal logic of actions - язык задания спецификаций.</p>
+<p>Практика:</p>
+<ol type="1">
+<li><a href="../../posts/learn-tla/doors-problem.html">Открываем двери</a></li>
+<li><a href="../../posts/learn-tla/booking-problem.html">Бронируем места</a></li>
+<li><a href="../../posts/learn-tla/money-transfer-problem.html">Переводим деньги</a></li>
+</ol>
+<hr>
+<p>Референсы:</p>
+<ol type="1">
+<li>https://lamport.azurewebsites.net/tla/tla.html</li>
+<li>Specifying Systems by Leslie Lamport</li>
+<li>https://learning.tlapl.us</li>
+<li>https://github.com/hwayne/learntla-v2</li>
+<li>https://github.com/ElliotSwart/pragmaticformalmodeling</li>
+</ol>
+
+
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Наверх</a> ]]></description>
+  <guid>https://zuzuka28.github.io/public-blog/posts/learn-tla/</guid>
+  <pubDate>Sun, 13 Sep 2026 00:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Поиск уязвимостей в программном обеспечении</title>
   <link>https://zuzuka28.github.io/public-blog/posts/vulnerability-hunting/</link>
@@ -46,7 +78,7 @@
 <li><a href="https://github.com/package-url/vers-spec">vers-spec</a> - Version Specification - спецификация версий для различных систем пакетирования</li>
 </ul></li>
 </ul>
-<p>Но даже с ведением стандарто проскакивают ошибки и расхождения между разными системами, которые мешают полной унификации.</p>
+<p>Но даже с ведением стандартов проскакивают ошибки и расхождения между разными системами, которые мешают полной унификации.</p>
 <p>Пример: несмотря на использование CPE, в разных системах может быть использовано разное название одного и того же продукта, например, в разном кейсе.</p>
 <p>Пример: одна и та же уязвимость может публиковаться в различных системах и иметь различные идентификаторы - CVE, GHSA, OSV, и т.д.</p>
 <p>Пример: одна система предоставляет полный перечень уязвимых версий, а другая обобщает их в некоторый диапазон версий, например, от 1.0 до 1.10.</p>
@@ -560,6 +592,20 @@ font-style: inherit;">}</span></span></code></pre></div></div>
 </ul></li>
 </ul>
 <p>Дизайн компонента, который занимается выборкой по версиям, должен учитывать основные кейсы и отвечать на них наиболее эффективно.</p>
+<p>Индекс для поиска должен быть многослойным, чтобы на каждом уровне можно было сузить запрос и быстро откинуть заведомо неподходящие варианты. Естественным образом можно отфильтровать в таком порядке:</p>
+<ul>
+<li>поставщик</li>
+<li>продукт</li>
+<li>версия</li>
+</ul>
+<p>Имея индексы для поиска по каждому из слоев можно быстро ответить на вопрос о том, какие уязвимости есть в продукте X.</p>
+<p>Для ответа на вопрос про наличие уязвимости в конкретной версии Y мой выбор - <a href="../../posts/vulnerability-hunting/interval-trees.html">интервальные деревья</a>. Определяя собственные типы и указывая способы определения порядка между ними, можно достичь эффективного способа выборки версий по таким деревьям.</p>
+<p>Отдельный вопрос - выборка уязвимостей, которая касается <a href="../../posts/vulnerability-hunting/applicability.html">определенной конфигурации</a> - операционной системы, браузера, самого продукта.</p>
+<p>Возможно данную логику можно реализовать посредством 2х проходов:</p>
+<ol type="1">
+<li>поиск потенциальных уязвимостей по версии ПО</li>
+<li>из полных отчетов получить расширенную информацию о конфигурации и через временный индекс сопоставить остальные переданные компоненты об окружении</li>
+</ol>
 <hr>
 <p>Референсы:</p>
 <ul>

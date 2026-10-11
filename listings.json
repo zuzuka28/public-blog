@@ -2,6 +2,7 @@
   {
     "listing": "/updates.html",
     "items": [
+      "/posts/learn-tla/index.html",
       "/posts/vulnerability-hunting/index.html",
       "/posts/protocol-stand/index.html"
     ]
