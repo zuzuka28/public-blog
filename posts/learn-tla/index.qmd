@@ -1,0 +1,24 @@
+---
+title: "Учимся моделировать системы математически"
+description: "Журнал поиска решений с помощью TLA+"
+date: 2026-09-13
+---
+
+TLA+ - temporal logic of actions - язык задания спецификаций.
+
+Практика:
+
+1. [Открываем двери](doors-problem.qmd)
+2. [Бронируем места](booking-problem.qmd)
+3. [Переводим деньги](money-transfer-problem.qmd)
+
+---
+
+Референсы:
+
+1. https://lamport.azurewebsites.net/tla/tla.html
+2. Specifying Systems by Leslie Lamport
+3. https://learning.tlapl.us
+4. https://github.com/hwayne/learntla-v2
+5. https://github.com/ElliotSwart/pragmaticformalmodeling
+

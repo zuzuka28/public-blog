@@ -1,0 +1,123 @@
+---
+title: "Описываем процесс бронирования с помощью TLA"
+description: ""
+date: 2026-09-14
+---
+
+## Описание задачи
+
+- Поезд имеет вместимость - Capacity
+- Составить модель, описывающую процесс бронирования.
+- Одному пассажиру выдается не более одного места.
+
+## Решение задачи
+
+Для задачи можно составить несколько моделей на разном уровне детализации.
+
+1. Модель для контроля количества занятых мест.
+2. Модель процесса бронирования для известных уникальных пассажиров.
+
+### Модель для контроля количества занятых мест
+
+Поезд имеет вместимость - Capacity.
+
+Каждое свободное место можно либо:
+
+- забронировать
+- снять бронь с места
+
+Инвариант - количество бронирований не должно превышать количество мест
+
+```tlaplus
+EXTENDS Naturals
+
+CONSTANTS Capacity
+
+ASSUME
+    /\ Capacity \in Nat
+
+VARIABLES booked
+
+vars == <<booked>>
+
+TypeOK ==
+    /\ booked \in Nat
+
+Init == booked = 0
+
+Book ==
+    /\ booked < Capacity
+    /\ booked' = booked + 1
+
+CancelBook ==
+    /\ booked > 0
+    /\ booked' = booked - 1
+
+Next ==
+    \/ Book
+    \/ CancelBook
+
+Spec == Init /\ [][Next]_vars
+
+NotOverflowCapacityInvariant ==
+    /\ booked <= Capacity
+```
+
+Модель следящая только за количеством занятых мест не может описать свойство "одному пассажиру выдается не более одного места".
+
+### Модель процесса бронирования для известных уникальных пассажиров
+
+Поезд имеет вместимость - Capacity.
+
+В поезд хотят сесть некоторое количество Passanger.
+
+Каждый Passanger имеет уникальный идентификатор.
+
+Каждый Passanger может либо:
+
+- забронировать место
+- снять бронь места
+
+Инварианты:
+
+- количество бронирований не должно превышать количество мест
+- одному пассажиру выдается не более одного места
+
+```tlaplus
+EXTENDS Naturals, FiniteSets
+
+CONSTANTS Capacity, Passangers
+
+ASSUME
+    /\ Capacity \in Nat
+    /\ Passangers \subseteq Nat
+
+VARIABLES bookings
+
+vars == <<bookings>>
+
+TypeOK ==
+    /\ bookings \subseteq Passangers
+
+Init == bookings = {}
+
+Book(p) ==
+    /\ p \notin bookings
+    /\ Cardinality(bookings) < Capacity
+    /\ bookings' = bookings \union {p}
+
+CancelBook(p) ==
+    /\ p \in bookings
+    /\ bookings' = bookings \ {p}
+
+Next == \E p \in Passangers:
+    \/ Book(p)
+    \/ CancelBook(p)
+
+Spec == Init /\ [][Next]_vars
+
+NotOverflowCapacityInvariant ==
+    /\ Cardinality(bookings) <= Capacity
+```
+
+Данная модель поддерживает перечисленные инварианты, но не уточняет, что происходит при повторных попытках забронировать или снять бронь одним и тем же пользователем.

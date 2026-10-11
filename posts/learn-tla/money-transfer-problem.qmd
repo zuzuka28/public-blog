@@ -1,0 +1,91 @@
+---
+title: "Переводим деньги с помощью TLA"
+description: ""
+date: 2026-09-16
+---
+
+## Описание задачи
+
+- Составить формальное описание процесса перевода денег на языке TLA+.
+- Есть два счета с неотрицательным балансом. Требуется перевести деньги с одного счета на другой
+- При переводе счет должен обладать неотрицательным балансом
+- Средства на счетах не должны теряться или создаваться
+
+## Решение задачи
+
+Для задачи можно составить несколько моделей на разном уровне детализации.
+
+1. Модель с атомарными переводами.
+2. Модель с переводами, предусматривающая отсутствие атомарности действий.
+
+### Модель с атомарными переводами
+
+Каждый из балансов соотносится с каким-либо аккаунтом
+
+Баланс это натуальное число
+
+Инварианты
+
+- баланс не может быть отрицательным
+- сумма всех балансов не изменяется
+
+При пересылке можно пересылать средства только другому аккаунту, но не самому себе
+
+Внешний наблюдатель не видит прерываний функции перевода средств с одного счета на другой
+
+Нюанс - в EXCEPT действия происходят не атомарно, а разворачиваются в последовательность изменений.
+
+
+```tlaplus
+EXTENDS Naturals, FiniteSets
+
+CONSTANTS Accounts, InitialBalances
+
+ASSUME
+    /\ IsFiniteSet(Accounts)
+    /\ InitialBalances \in [Accounts -> Nat]
+
+VARIABLES balances
+
+vars == <<balances>>
+
+TypeOK ==
+    /\ balances \in [Accounts -> Nat]
+
+RECURSIVE SumBalances(_, _)
+
+SumBalances(balances_to_sum, accounts_to_sum) ==
+    IF accounts_to_sum = {}
+    THEN 0
+    ELSE
+        LET acc == CHOOSE a \in accounts_to_sum: TRUE
+        IN balances_to_sum[acc] + SumBalances(balances_to_sum, accounts_to_sum \ {acc})
+
+InitialTotalBalances == SumBalances(InitialBalances, Accounts)
+
+TotalBalances == SumBalances(balances, Accounts)
+
+Init ==
+    /\ balances = InitialBalances
+
+SendMoney(from, to, amount) ==
+    /\ balances[from] - amount >= 0
+    /\ balances' = [ balances EXCEPT
+            ![to] = @ + amount,
+            ![from] = @ - amount
+       ]
+
+Next ==
+    /\ \E from \in Accounts:
+            \E to \in Accounts:
+                /\ from /= to
+                /\ \E amount \in 0..balances[from]:
+                    SendMoney(from, to, amount)
+
+Spec == Init /\ [][Next]_vars
+
+MoneyNotLostInvariant ==
+    TotalBalances = InitialTotalBalances
+```
+
+### Модель с переводами, предусматривающая отсутствие атомарности действий

@@ -1,0 +1,125 @@
+---
+title: "Открываем двери с помощью TLA"
+description: ""
+date: 2026-09-13
+---
+
+## Описание задачи
+
+- Составить формальное описание работы двери на языке TLA+.
+- У двери есть операции открыть, закрыть, запереть и отпереть.
+- Начальное состояние: дверь закрыта и заперта.
+- Открытая дверь не должна быть заперта.
+
+## Решение задачи
+
+Взаимодействие с дверью описывается через конечный автомат - есть набор состояний и переходов.
+
+Дверь в данной модели имеет два признака
+
+1. открыта/закрыта
+2. отперта/заперта
+
+Возможные комбинации признаков
+
+1. закрыта, заперта
+2. закрыта, отперта
+3. открыта, заперта
+4. открыта, отперта
+
+С учетом ограничения, что окрытая дверь не может быть заперта, допустимые переходы:
+
+- закрыта, заперта -> закрыта, отперта
+- закрыта, отперта -> закрыта, заперта
+- закрыта, отперта -> открыта, отперта
+- открыта, отперта -> закрыта, отперта
+
+Вариант спецификации с перечисленными переходами:
+
+```tlaplus
+VARIABLES door, lock
+
+vars == <<door, lock>>
+
+TypeOK ==
+    /\ door \in {"open", "closed"}
+    /\ lock \in {"locked", "unlocked"}
+
+Init ==
+    /\ door = "closed"
+    /\ lock = "locked"
+
+OpenDoor ==
+    /\ door = "closed"
+    /\ lock = "unlocked"
+    /\ door' = "open"
+    /\ UNCHANGED <<lock>>
+
+CloseDoor ==
+    /\ door = "open"
+    /\ lock = "unlocked"
+    /\ door' = "closed"
+    /\ UNCHANGED <<lock>>
+
+LockLock ==
+    /\ door = "closed"
+    /\ lock = "unlocked"
+    /\ lock' = "locked"
+    /\ UNCHANGED <<door>>
+
+UnlockLock ==
+    /\ door = "closed"
+    /\ lock = "locked"
+    /\ lock' = "unlocked"
+    /\ UNCHANGED <<door>>
+
+Next ==
+    \/ OpenDoor
+    \/ CloseDoor
+    \/ LockLock
+    \/ UnlockLock
+
+Spec == Init /\ [][Next]_vars
+
+OpenDoorNotLockedInvariant == ~
+    /\ door = "open"
+    /\ lock = "locked"
+```
+
+Альтернативно можно построить модель с тремя состояниями:
+
+```tlaplus
+VARIABLES door
+
+vars == <<door>>
+
+TypeOK ==
+    /\ door \in {"locked", "closed", "open"}
+
+Init ==
+    /\ door = "locked"
+
+OpenDoor ==
+    /\ door = "closed"
+    /\ door' = "open"
+
+CloseDoor ==
+    /\ door = "open"
+    /\ door' = "closed"
+
+LockLock ==
+    /\ door = "closed"
+    /\ door' = "locked"
+
+UnlockLock ==
+    /\ door = "locked"
+    /\ door' = "closed"
+
+Next ==
+    \/ OpenDoor
+    \/ CloseDoor
+    \/ LockLock
+    \/ UnlockLock
+
+Spec == Init /\ [][Next]_vars
+```
